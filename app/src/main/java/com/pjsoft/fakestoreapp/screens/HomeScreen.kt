@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.pjsoft.fakestoreapp.components.ErrorState
 import com.pjsoft.fakestoreapp.models.Product
 import com.pjsoft.fakestoreapp.services.ProductService
 import com.pjsoft.fakestoreapp.ui.theme.*
@@ -32,6 +33,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 fun HomeScreen(navController: NavController) {
     var products by remember { mutableStateOf(listOf<Product>()) }
     var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf(false) }
 
     LaunchedEffect(true) {
         try {
@@ -45,106 +47,113 @@ fun HomeScreen(navController: NavController) {
             loading = false
         } catch (e: Exception) {
             loading = false
+            error = true
             Log.e("HomeScreen", e.toString())
         }
     }
 
-    if (loading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = EvergreenShadow)
-        }
-    } else {
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(AlmondCream)
-                .padding(horizontal = 16.dp)
-        ) {
-            Spacer(Modifier.height(20.dp))
-
-            Text(
-                text = "What is your outfit today?",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = EvergreenShadow
-                )
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                placeholder = { Text("Search product") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null,
-                        tint = ForestTint
-                    )
-                },
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ForestTint,
-                    unfocusedBorderColor = ForestTint.copy(alpha = 0.5f)
-                )
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-
+    when {
+        loading -> {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(EvergreenShadow)
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        "Last discount up to 70%",
-                        color = AlmondCream,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Free shipping to your house",
-                        color = AlmondCream.copy(alpha = 0.8f)
-                    )
-                }
+                CircularProgressIndicator(color = EvergreenShadow)
             }
+        }
 
-            Spacer(Modifier.height(24.dp))
+        error -> {
+            ErrorState(
+                message = "Error loading products. Check your connection.",
+                onRetry = {
+                    error = false
+                    loading = true
+                    products = emptyList()
+                }
+            )
+        }
 
-            if (products.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        else -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AlmondCream)
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(Modifier.height(20.dp))
+
+                Text(
+                    text = "What is your outfit today?",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = EvergreenShadow
+                    )
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = {},
+                    placeholder = { Text("Search product") },
+                    leadingIcon = {
                         Icon(
-                            imageVector = Icons.Default.Info,
+                            imageVector = Icons.Default.Search,
                             contentDescription = null,
-                            tint = ForestTint.copy(alpha = 0.5f),
-                            modifier = Modifier.size(48.dp)
+                            tint = ForestTint
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text("No products available", color = ForestTint)
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ForestTint,
+                        unfocusedBorderColor = ForestTint.copy(alpha = 0.5f)
+                    )
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(EvergreenShadow)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Last discount up to 70%", color = AlmondCream, fontWeight = FontWeight.Bold)
+                        Text("Free shipping to your house", color = AlmondCream.copy(alpha = 0.8f))
                     }
                 }
-            } else {
-                LazyColumn {
-                    items(products) { product ->
-                        ProductItemCard(
-                            product = product,
-                            onClick = {
-                                navController.navigate(ProductDetailScreenRoute(product.id))
-                            }
-                        )
+
+                Spacer(Modifier.height(24.dp))
+
+                if (products.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = ForestTint.copy(alpha = 0.5f),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text("No products available", color = ForestTint)
+                        }
+                    }
+                } else {
+                    LazyColumn {
+                        items(products) { product ->
+                            ProductItemCard(
+                                product = product,
+                                onClick = {
+                                    navController.navigate(ProductDetailScreenRoute(product.id))
+                                }
+                            )
+                        }
                     }
                 }
             }
