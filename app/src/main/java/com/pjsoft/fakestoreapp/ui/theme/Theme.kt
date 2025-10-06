@@ -49,7 +49,7 @@ fun FakeStoreAppTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = MontserratTypography,
         content = content
     )
 }
